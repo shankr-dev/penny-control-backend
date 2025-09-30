@@ -1,0 +1,2 @@
+-- Initial baseline migration for auth-service
+-- Auth service specific tables will be added in subsequent migrations

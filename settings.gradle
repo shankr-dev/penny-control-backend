@@ -1,0 +1,5 @@
+rootProject.name = 'penny-control-backend'
+
+include 'auth-service'
+include 'user-service'
+include 'common-library'
