@@ -54,6 +54,7 @@ penny-control-backend/
 ## Development
 
 This project uses:
+
 - Spring Boot for the application framework
 - JPA for database interactions
 - Lombok to reduce boilerplate code
