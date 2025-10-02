@@ -1,4 +1,4 @@
-package com.pennycontrol.common.security.aspect;
+package com.pennycontrol.common.security;
 
 import com.pennycontrol.common.annotation.RequireRole;
 import com.pennycontrol.common.dto.UserPrincipal;
@@ -10,7 +10,6 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -21,7 +20,6 @@ import java.util.Set;
  */
 @Slf4j
 @Aspect
-@Component
 public class RoleCheckAspect {
 
     /**

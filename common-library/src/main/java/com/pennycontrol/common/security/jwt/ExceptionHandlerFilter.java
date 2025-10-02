@@ -1,4 +1,4 @@
-package com.pennycontrol.common.security.filter;
+package com.pennycontrol.common.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pennycontrol.common.exception.ErrorCode;
@@ -12,13 +12,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class ExceptionHandlerFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;

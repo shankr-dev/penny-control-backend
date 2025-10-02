@@ -1,6 +1,7 @@
 package com.pennycontrol.common.security.jwt;
 
 import com.pennycontrol.common.dto.UserPrincipal;
+import com.pennycontrol.common.security.jwt.JwtProperties;
 import com.pennycontrol.common.exception.ErrorCode;
 import com.pennycontrol.common.exception.UnauthorizedException;
 import io.jsonwebtoken.*;
@@ -9,7 +10,6 @@ import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
     private final JwtProperties jwtProperties;
@@ -54,12 +53,11 @@ public class JwtTokenProvider {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userPrincipal.getId());
-        claims.put("username", userPrincipal.getUsername());
         claims.put("email", userPrincipal.getEmail());
         claims.put("roles", userPrincipal.getRoles());
 
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
+                .subject(userPrincipal.getEmail()) // Use email as subject
                 .claims(claims)
                 .issuer(jwtProperties.getIssuer())
                 .issuedAt(now)
@@ -69,9 +67,9 @@ public class JwtTokenProvider {
     }
 
     /**
-     * Extract username from token
+     * Extract email from token (subject contains email in our system)
      */
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromTokenSubject(String token) {
         Claims claims = getClaimsFromToken(token);
         return claims.getSubject();
     }
@@ -108,14 +106,12 @@ public class JwtTokenProvider {
         Claims claims = getClaimsFromToken(token);
 
         Long userId = claims.get("userId", Long.class);
-        String username = claims.getSubject();
         String email = claims.get("email", String.class);
         @SuppressWarnings("unchecked")
         Set<String> roles = Set.copyOf(claims.get("roles", java.util.List.class));
 
         return UserPrincipal.builder()
                 .id(userId)
-                .username(username)
                 .email(email)
                 .roles(roles)
                 .enabled(true)

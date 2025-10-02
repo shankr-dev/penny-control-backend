@@ -2,19 +2,25 @@ spring:
   application:
     name: auth-service
 
-  # Auth Service Specific Database
+  # Shared Database Configuration
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${AUTH_DB_NAME}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
+  # Flyway Configuration (Auth service manages migrations)
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 server:
   port: ${AUTH_SERVICE_PORT}
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:your-secret-key-min-512-bits-for-hs512-algorithm-change-this-in-production}
+  secret: ${JWT_SECRET}
   access-token-expiration: 3600000        # 1 hour in milliseconds
   refresh-token-expiration: 2592000000    # 30 days in milliseconds
   issuer: penny-control
@@ -26,10 +32,8 @@ security:
   public-endpoints:
     - /api/v1/auth/login
     - /api/v1/auth/register
-    - /api/v1/auth/verify-email
-    - /api/v1/auth/forgot-password
-    - /api/v1/auth/reset-password
+    - /api/v1/auth/refresh
+    # Note: /api/v1/auth/logout and /api/v1/auth/logout-device are PROTECTED (require authentication)
   allowed-origins:
-    - http://localhost:3000
-    - http://localhost:5173
-  csrf-enabled: false
+    - ${ALLOWED_ORIGIN_1}
+    - ${ALLOWED_ORIGIN_2}

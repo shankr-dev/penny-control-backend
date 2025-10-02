@@ -1,4 +1,4 @@
-package com.pennycontrol.common.config;
+package com.pennycontrol.common.security;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -13,5 +13,4 @@ import java.util.List;
 public class SecurityProperties {
     private List<String> publicEndpoints = new ArrayList<>();
     private List<String> allowedOrigins = new ArrayList<>();
-    private boolean csrfEnabled = false;
 }

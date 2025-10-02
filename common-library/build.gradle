@@ -19,6 +19,9 @@ dependencies {
     api 'org.flywaydb:flyway-database-postgresql'
     api 'org.postgresql:postgresql'
 
+    // Spring Boot DevTools for automatic restart
+    api 'org.springframework.boot:spring-boot-devtools'
+
     // JWT
     api 'io.jsonwebtoken:jjwt-api:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'

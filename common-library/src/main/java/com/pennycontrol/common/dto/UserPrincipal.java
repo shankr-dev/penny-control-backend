@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class UserPrincipal implements UserDetails {
     private Long id;
-    private String username;
     private String email;
     private String password;
     private Set<String> roles;
@@ -27,10 +26,9 @@ public class UserPrincipal implements UserDetails {
     private boolean accountNonLocked;
     private boolean credentialsNonExpired;
 
-    public static UserPrincipal create(Long id, String username, String email, String password, Set<String> roles) {
+    public static UserPrincipal create(Long id, String email, String password, Set<String> roles) {
         return UserPrincipal.builder()
                 .id(id)
-                .username(username)
                 .email(email)
                 .password(password)
                 .roles(roles)
@@ -53,9 +51,13 @@ public class UserPrincipal implements UserDetails {
         return password;
     }
 
+    /**
+     * Returns email as username (required by Spring Security UserDetails)
+     * In our system, email IS the username for login
+     */
     @Override
     public String getUsername() {
-        return username;
+        return email;
     }
 
     @Override

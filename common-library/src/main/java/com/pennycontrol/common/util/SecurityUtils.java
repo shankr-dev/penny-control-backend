@@ -41,11 +41,11 @@ public class SecurityUtils {
     }
 
     /**
-     * Get the current authenticated username
+     * Get the current authenticated user's email
      */
-    public static String getCurrentUsername() {
+    public static String getCurrentUserEmail() {
         return getCurrentUser()
-                .map(UserPrincipal::getUsername)
+                .map(UserPrincipal::getEmail)
                 .orElseThrow(() -> new UnauthorizedException("User not authenticated"));
     }
 

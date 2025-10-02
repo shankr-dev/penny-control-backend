@@ -25,7 +25,8 @@ public enum ErrorCode {
     // System
     INTERNAL_SERVER_ERROR("SYS_001", "Internal server error"),
     SERVICE_UNAVAILABLE("SYS_002", "Service temporarily unavailable"),
-    DATABASE_ERROR("SYS_003", "Database error occurred");
+    DATABASE_ERROR("SYS_003", "Database error occurred"),
+    METHOD_NOT_ALLOWED("SYS_004", "HTTP method not allowed for this endpoint");
 
     private final String code;
     private final String message;
