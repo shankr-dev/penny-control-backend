@@ -4,22 +4,33 @@ import com.pennycontrol.common.dto.ApiResponse;
 import com.pennycontrol.common.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.lang.NonNull;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * Global Exception Handler for all REST API exceptions
+ * Extends ResponseEntityExceptionHandler to handle Spring MVC exceptions
+ */
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(
@@ -158,10 +169,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(error));
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(
+    /**
+     * Override Spring MVC's handler for MethodArgumentNotValidException (400 - Validation errors)
+     */
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
-            HttpServletRequest request) {
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
         log.error("Validation failed: {}", ex.getMessage());
 
         List<ApiResponse.ValidationError> validationErrors = ex.getBindingResult().getAllErrors().stream()
@@ -172,16 +188,117 @@ public class GlobalExceptionHandler {
                 })
                 .toList();
 
+        String path = extractPath(request);
         ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
                 ErrorCode.VALIDATION_ERROR.getCode(),
                 ErrorCode.VALIDATION_ERROR.name(),
                 "Validation failed for one or more fields",
                 "Please check the errors field for specific validation issues",
-                request.getRequestURI(),
+                path,
                 validationErrors
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
+    }
+
+    /**
+     * Override Spring MVC's handler for HttpRequestMethodNotSupportedException (405 - Method Not Allowed)
+     */
+    @Override
+    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+        log.error("Method not supported: {}", ex.getMessage());
+
+        String supportedMethods = ex.getSupportedHttpMethods() != null
+                ? ex.getSupportedHttpMethods().stream()
+                .map(HttpMethod::name)
+                .collect(Collectors.joining(", "))
+                : "N/A";
+
+        String path = extractPath(request);
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.METHOD_NOT_ALLOWED.getCode(),
+                ErrorCode.METHOD_NOT_ALLOWED.name(),
+                String.format("Request method '%s' is not supported", ex.getMethod()),
+                String.format("Supported methods: %s", supportedMethods),
+                path
+        );
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(ApiResponse.error(error));
+    }
+
+    /**
+     * Override Spring MVC's handler for HttpMediaTypeNotSupportedException (415 - Unsupported Media Type)
+     */
+    @Override
+    protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+        log.error("Media type not supported: {}", ex.getMessage());
+
+        String supportedTypes = String.join(", ", ex.getSupportedMediaTypes().stream().map(Object::toString).toList());
+
+        String path = extractPath(request);
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.UNSUPPORTED_MEDIA_TYPE.getCode(),
+                ErrorCode.UNSUPPORTED_MEDIA_TYPE.name(),
+                String.format("Media type '%s' is not supported", ex.getContentType()),
+                String.format("Supported media types: %s", supportedTypes),
+                path
+        );
+
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(ApiResponse.error(error));
+    }
+
+    /**
+     * Override Spring MVC's handler for MissingServletRequestParameterException (400 - Missing Parameter)
+     */
+    @Override
+    protected ResponseEntity<Object> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+        log.error("Missing request parameter: {}", ex.getMessage());
+
+        String path = extractPath(request);
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.MISSING_PARAMETER.getCode(),
+                ErrorCode.MISSING_PARAMETER.name(),
+                String.format("Required parameter '%s' is missing", ex.getParameterName()),
+                String.format("Parameter '%s' of type '%s' is required", ex.getParameterName(), ex.getParameterType()),
+                path
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
+    }
+
+    /**
+     * Override Spring MVC's handler for NoResourceFoundException (404 - Not Found) - Spring Boot 3.2+
+     */
+    @Override
+    protected ResponseEntity<Object> handleNoResourceFoundException(
+            NoResourceFoundException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+        log.error("No resource found: {}", ex.getMessage());
+
+        String path = extractPath(request);
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.NOT_FOUND.getCode(),
+                ErrorCode.NOT_FOUND.name(),
+                ErrorCode.NOT_FOUND.getMessage(),
+                String.format("No endpoint found for %s %s", ex.getHttpMethod(), ex.getResourcePath()),
+                path
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(Exception.class)
@@ -201,6 +318,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(error));
     }
 
+    /**
+     * Extract request path from WebRequest
+     */
+    private String extractPath(WebRequest request) {
+        String description = request.getDescription(false);
+        // description format: "uri=/api/v1/path"
+        if (description.startsWith("uri=")) {
+            return description.substring(4);
+        }
+        return description;
+    }
+
+    /**
+     * Determine HTTP status from ErrorCode
+     */
     private HttpStatus determineHttpStatus(ErrorCode errorCode) {
         return switch (errorCode) {
             case UNAUTHORIZED, INVALID_TOKEN, INVALID_CREDENTIALS -> HttpStatus.UNAUTHORIZED;

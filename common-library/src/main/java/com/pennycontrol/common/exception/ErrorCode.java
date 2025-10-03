@@ -26,7 +26,13 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR("SYS_001", "Internal server error"),
     SERVICE_UNAVAILABLE("SYS_002", "Service temporarily unavailable"),
     DATABASE_ERROR("SYS_003", "Database error occurred"),
-    METHOD_NOT_ALLOWED("SYS_004", "HTTP method not allowed for this endpoint");
+
+    // HTTP Errors
+    METHOD_NOT_ALLOWED("HTTP_001", "HTTP method not allowed for this endpoint"),
+    UNSUPPORTED_MEDIA_TYPE("HTTP_002", "Media type is not supported"),
+    NOT_FOUND("HTTP_003", "The requested resource was not found"),
+    BAD_REQUEST("HTTP_004", "Bad request"),
+    MISSING_PARAMETER("HTTP_005", "Required parameter is missing");
 
     private final String code;
     private final String message;

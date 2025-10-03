@@ -81,13 +81,6 @@ public class JwtTokenProvider {
         return claims.get("userId", Long.class);
     }
 
-    /**
-     * Extract email from token
-     */
-    public String getEmailFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.getSubject();
-    }
 
     /**
      * Extract roles from token
