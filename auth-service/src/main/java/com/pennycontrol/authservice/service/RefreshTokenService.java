@@ -35,10 +35,12 @@ public interface RefreshTokenService {
     /**
      * Delete a specific refresh token (used during logout)
      * Immediately removes token from database
+     * Verifies token belongs to the user for security
      *
      * @param token The token to delete
+     * @param userId The authenticated user ID
      */
-    void deleteRefreshToken(String token);
+    void deleteRefreshToken(String token, Long userId);
 
     /**
      * Delete all refresh tokens for a user (logout from all devices)

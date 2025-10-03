@@ -1,9 +1,6 @@
 package com.pennycontrol.common.security.jwt;
 
 import com.pennycontrol.common.dto.UserPrincipal;
-import com.pennycontrol.common.security.jwt.JwtAuthenticationToken;
-import com.pennycontrol.common.security.jwt.JwtProperties;
-import com.pennycontrol.common.security.jwt.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,20 +29,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = extractJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                UserPrincipal userPrincipal = jwtTokenProvider.getUserPrincipalFromToken(jwt);
+            if (StringUtils.hasText(jwt)) {
+                if (jwtTokenProvider.validateToken(jwt)) {
+                    UserPrincipal userPrincipal = jwtTokenProvider.getUserPrincipalFromToken(jwt);
 
-                JwtAuthenticationToken authentication = new JwtAuthenticationToken(
-                        userPrincipal,
-                        jwt,
-                        userPrincipal.getAuthorities()
-                );
+                    JwtAuthenticationToken authentication = new JwtAuthenticationToken(
+                            userPrincipal,
+                            jwt,
+                            userPrincipal.getAuthorities()
+                    );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("Set authentication for user: {}", userPrincipal.getUsername());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("Set authentication for user: {}", userPrincipal.getUsername());
+                }
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);
+            // Clear security context on authentication failure
+            SecurityContextHolder.clearContext();
             // Exception will be caught by ExceptionHandlerFilter
             throw ex;
         }

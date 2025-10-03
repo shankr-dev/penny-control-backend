@@ -67,7 +67,7 @@ public class AuthController {
 
         authService.logout();
 
-        return ResponseEntity.ok(ApiResponse.success("Successfully logged out from all devices", null));
+        return ResponseEntity.ok(ApiResponse.success("Successfully logged out from all devices"));
     }
 
     @DeleteMapping("/logout-device")
@@ -77,6 +77,6 @@ public class AuthController {
 
         authService.logoutSingleDevice(request.getRefreshToken());
 
-        return ResponseEntity.ok(ApiResponse.success("Logged out from this device", null));
+        return ResponseEntity.ok(ApiResponse.success("Logged out from this device"));
     }
 }

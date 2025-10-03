@@ -6,6 +6,7 @@ import com.pennycontrol.authservice.repository.RefreshTokenRepository;
 import com.pennycontrol.authservice.service.RefreshTokenService;
 import com.pennycontrol.common.exception.ErrorCode;
 import com.pennycontrol.common.exception.UnauthorizedException;
+import com.pennycontrol.common.exception.ValidationException;
 import com.pennycontrol.common.security.jwt.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -92,16 +93,26 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     @Transactional
-    public void deleteRefreshToken(String token) {
+    public void deleteRefreshToken(String token, Long userId) {
         String tokenHash = hashToken(token);
 
-        int deletedCount = refreshTokenRepository.deleteByTokenHash(tokenHash);
-        if (deletedCount == 0) {
-            log.warn("Attempted to delete non-existent refresh token");
+        // Find the token first to verify ownership
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> {
+                    log.warn("Attempted to delete non-existent refresh token");
+                    return new UnauthorizedException(ErrorCode.INVALID_TOKEN, "Invalid refresh token");
+                });
+
+        // Verify token belongs to the authenticated user
+        if (!refreshToken.getUser().getId().equals(userId)) {
+            log.warn("Security violation: User {} attempted to delete token belonging to user {}",
+                    userId, refreshToken.getUser().getId());
             throw new UnauthorizedException(ErrorCode.INVALID_TOKEN, "Invalid refresh token");
         }
 
-        log.info("Deleted refresh token (logout)");
+        // Delete the token
+        refreshTokenRepository.delete(refreshToken);
+        log.info("Deleted refresh token for user ID: {} (single device logout)", userId);
     }
 
     @Override
@@ -129,7 +140,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
             log.error("SHA-256 algorithm not available", e);
-            throw new RuntimeException("Error hashing token", e);
+            throw new ValidationException("Token hashing failed: SHA-256 algorithm not available");
         }
     }
 }

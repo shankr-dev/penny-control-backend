@@ -1,5 +1,6 @@
 package com.pennycontrol.common.exception.handler;
 
+import com.pennycontrol.common.dto.ApiResponse;
 import com.pennycontrol.common.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -14,82 +15,93 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorResponse> handleBusinessException(
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(
             BusinessException ex,
             HttpServletRequest request) {
         log.error("Business exception: {}", ex.getMessage(), ex);
 
         HttpStatus status = determineHttpStatus(ex.getErrorCode());
-        ErrorResponse errorResponse = ErrorResponse.of(
-                status.value(),
-                ex.getErrorCode(),
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ex.getErrorCode().getCode(),
+                ex.getErrorCode().name(),
                 ex.getMessage(),
+                ex.getErrorCode().getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(status).body(errorResponse);
+        return ResponseEntity.status(status).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(
             ResourceNotFoundException ex,
             HttpServletRequest request) {
         log.error("Resource not found: {}", ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getErrorCode(),
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ex.getErrorCode().getCode(),
+                ex.getErrorCode().name(),
                 ex.getMessage(),
+                ex.getErrorCode().getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ErrorResponse> handleUnauthorizedException(
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedException(
             UnauthorizedException ex,
             HttpServletRequest request) {
         log.error("Unauthorized: {}", ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.UNAUTHORIZED.value(),
-                ex.getErrorCode(),
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ex.getErrorCode().getCode(),
+                ex.getErrorCode().name(),
                 ex.getMessage(),
+                ex.getErrorCode().getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(
             ValidationException ex,
             HttpServletRequest request) {
         log.error("Validation exception: {}", ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getErrorCode(),
-                ex.getMessage(),
-                request.getRequestURI()
-        );
-        errorResponse.setValidationErrors(ex.getValidationErrors());
+        // Convert Map<String, String> to List<ValidationError>
+        List<ApiResponse.ValidationError> validationErrors = null;
+        if (ex.getValidationErrors() != null && !ex.getValidationErrors().isEmpty()) {
+            validationErrors = ex.getValidationErrors().entrySet().stream()
+                    .map(entry -> ApiResponse.ValidationError.of(entry.getKey(), entry.getValue()))
+                    .toList();
+        }
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ex.getErrorCode().getCode(),
+                ex.getErrorCode().name(),
+                ex.getMessage(),
+                "Please check the errors field for specific validation issues",
+                request.getRequestURI(),
+                validationErrors
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
     }
 
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatchException(
             MethodArgumentTypeMismatchException ex,
             HttpServletRequest request) {
         log.error("Type mismatch: {}", ex.getMessage());
@@ -97,18 +109,19 @@ public class GlobalExceptionHandler {
         String message = String.format("Invalid value '%s' for parameter '%s'. Expected type: %s",
                 ex.getValue(), ex.getName(), ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown");
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.BAD_REQUEST.value(),
-                ErrorCode.INVALID_INPUT,
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.INVALID_INPUT.getCode(),
+                ErrorCode.INVALID_INPUT.name(),
                 message,
+                ErrorCode.INVALID_INPUT.getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(
             AuthenticationException ex,
             HttpServletRequest request) {
         log.error("Authentication failed: {}", ex.getMessage());
@@ -117,70 +130,75 @@ public class GlobalExceptionHandler {
                 ? ErrorCode.INVALID_CREDENTIALS
                 : ErrorCode.UNAUTHORIZED;
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.UNAUTHORIZED.value(),
-                errorCode,
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                errorCode.getCode(),
+                errorCode.name(),
                 ex.getMessage(),
+                errorCode.getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
             AccessDeniedException ex,
             HttpServletRequest request) {
         log.error("Access denied: {}", ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.FORBIDDEN.value(),
-                ErrorCode.ACCESS_DENIED,
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.ACCESS_DENIED.getCode(),
+                ErrorCode.ACCESS_DENIED.name(),
                 "You don't have permission to access this resource",
+                ErrorCode.ACCESS_DENIED.getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
         log.error("Validation failed: {}", ex.getMessage());
 
-        Map<String, String> validationErrors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            validationErrors.put(fieldName, errorMessage);
-        });
+        List<ApiResponse.ValidationError> validationErrors = ex.getBindingResult().getAllErrors().stream()
+                .map(error -> {
+                    String fieldName = ((FieldError) error).getField();
+                    String errorMessage = error.getDefaultMessage();
+                    return ApiResponse.ValidationError.of(fieldName, errorMessage);
+                })
+                .toList();
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.BAD_REQUEST.value(),
-                ErrorCode.VALIDATION_ERROR,
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.VALIDATION_ERROR.getCode(),
+                ErrorCode.VALIDATION_ERROR.name(),
                 "Validation failed for one or more fields",
-                request.getRequestURI()
+                "Please check the errors field for specific validation issues",
+                request.getRequestURI(),
+                validationErrors
         );
-        errorResponse.setValidationErrors(validationErrors);
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(
+    public ResponseEntity<ApiResponse<Void>> handleGlobalException(
             Exception ex,
             HttpServletRequest request) {
         log.error("Unexpected error occurred", ex);
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ErrorCode.INTERNAL_SERVER_ERROR,
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                ErrorCode.INTERNAL_SERVER_ERROR.getCode(),
+                ErrorCode.INTERNAL_SERVER_ERROR.name(),
                 "An unexpected error occurred. Please try again later.",
+                ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(error));
     }
 
     private HttpStatus determineHttpStatus(ErrorCode errorCode) {

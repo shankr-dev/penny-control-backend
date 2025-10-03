@@ -2,6 +2,8 @@ package com.pennycontrol.common.config;
 
 import com.pennycontrol.common.security.RoleCheckAspect;
 import com.pennycontrol.common.security.SecurityProperties;
+import com.pennycontrol.common.security.jwt.JwtAuthenticationEntryPoint;
+import com.pennycontrol.common.security.jwt.SecurityLoggingFilter;
 import com.pennycontrol.common.security.jwt.ExceptionHandlerFilter;
 import com.pennycontrol.common.security.jwt.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,13 +51,18 @@ public class SecurityConfiguration {
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             ExceptionHandlerFilter exceptionHandlerFilter,
+            SecurityLoggingFilter securityLoggingFilter,
             SecurityProperties securityProperties,
-            @Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfigurationSource
+            @Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfigurationSource,
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint
     ) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                )
                 .authorizeHttpRequests(auth -> {
                     // Public endpoints from configuration
                     if (securityProperties.getPublicEndpoints() != null
@@ -73,8 +80,9 @@ public class SecurityConfiguration {
                     // All other requests require authentication
                     auth.anyRequest().authenticated();
                 })
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(exceptionHandlerFilter, JwtAuthenticationFilter.class);
+                .addFilterBefore(exceptionHandlerFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(jwtAuthenticationFilter, ExceptionHandlerFilter.class)
+                .addFilterAfter(securityLoggingFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

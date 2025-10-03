@@ -1,8 +1,8 @@
 package com.pennycontrol.common.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pennycontrol.common.dto.ApiResponse;
 import com.pennycontrol.common.exception.ErrorCode;
-import com.pennycontrol.common.exception.ErrorResponse;
 import com.pennycontrol.common.exception.UnauthorizedException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -46,15 +46,19 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
             String message,
             HttpStatus status) throws IOException {
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                status.value(),
-                errorCode,
+        ApiResponse.ErrorDetails error = ApiResponse.ErrorDetails.of(
+                errorCode.getCode(),
+                errorCode.name(),
                 message,
+                errorCode.getMessage(),
                 request.getRequestURI()
         );
 
+        ApiResponse<Void> apiResponse = ApiResponse.error(error);
+
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
     }
 }

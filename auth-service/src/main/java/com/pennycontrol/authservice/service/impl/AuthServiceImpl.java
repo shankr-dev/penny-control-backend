@@ -204,7 +204,7 @@ public class AuthServiceImpl implements AuthService {
         Long userId = SecurityUtils.getCurrentUserId();
         log.info("Processing single device logout request for user ID: {}", userId);
 
-        refreshTokenService.deleteRefreshToken(refreshToken);
+        refreshTokenService.deleteRefreshToken(refreshToken, userId);
 
         log.info("Single device logout successful for user ID: {}", userId);
     }

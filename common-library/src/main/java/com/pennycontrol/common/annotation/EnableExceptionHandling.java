@@ -27,7 +27,7 @@ import java.lang.annotation.*;
  *
  * This will automatically configure:
  * - GlobalExceptionHandler (@RestControllerAdvice)
- * - Standardized error responses (ErrorResponse)
+ * - Standardized error responses (ApiResponse with ErrorDetails)
  * - Validation error mapping
  * - HTTP status code mapping for different exception types
  */

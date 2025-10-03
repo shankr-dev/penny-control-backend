@@ -53,7 +53,6 @@ public class JwtTokenProvider {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userPrincipal.getId());
-        claims.put("email", userPrincipal.getEmail());
         claims.put("roles", userPrincipal.getRoles());
 
         return Jwts.builder()
@@ -87,7 +86,7 @@ public class JwtTokenProvider {
      */
     public String getEmailFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
-        return claims.get("email", String.class);
+        return claims.getSubject();
     }
 
     /**
@@ -106,7 +105,7 @@ public class JwtTokenProvider {
         Claims claims = getClaimsFromToken(token);
 
         Long userId = claims.get("userId", Long.class);
-        String email = claims.get("email", String.class);
+        String email = claims.getSubject();
         @SuppressWarnings("unchecked")
         Set<String> roles = Set.copyOf(claims.get("roles", java.util.List.class));
 
