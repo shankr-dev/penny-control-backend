@@ -1,5 +1,6 @@
 package com.pennycontrol.authservice.entity;
 
+import com.pennycontrol.common.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

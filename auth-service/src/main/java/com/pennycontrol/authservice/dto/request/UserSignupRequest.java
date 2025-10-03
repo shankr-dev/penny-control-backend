@@ -31,8 +31,8 @@ public class UserSignupRequest {
     private String name;
 
     @Pattern(
-            regexp = "^[+]?[(]?[0-9]{1,4}[)]?[-\\s.]?[(]?[0-9]{1,4}[)]?[-\\s.]?[0-9]{1,9}$",
-            message = "Invalid phone number format"
+            regexp = "^\\+?[1-9]\\d{1,14}$",
+            message = "Phone number must be in E.164 format (e.g., +1234567890, max 15 digits)"
     )
     private String phoneNumber;
 

@@ -1,4 +1,4 @@
-package com.pennycontrol.userservice.entity;
+package com.pennycontrol.common.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -36,6 +36,9 @@ public class User {
     @Column(name = "phone_number", unique = true, length = 20)
     private String phoneNumber;
 
+    @Column(length = 500)
+    private String avatar;
+
     @Column(length = 3)
     @Builder.Default
     private String currency = "USD";
@@ -46,17 +49,20 @@ public class User {
 
     @Column(name = "account_locked")
     @Builder.Default
-    private Boolean accountLocked = false;
+    private boolean accountLocked = false;
 
     @Column(name = "enabled")
     @Builder.Default
-    private Boolean enabled = true;
+    private boolean enabled = true;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "role")
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
     @Builder.Default
-    private Set<String> roles = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

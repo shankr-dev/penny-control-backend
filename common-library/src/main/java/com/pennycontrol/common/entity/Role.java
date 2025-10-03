@@ -1,4 +1,4 @@
-package com.pennycontrol.authservice.entity;
+package com.pennycontrol.common.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

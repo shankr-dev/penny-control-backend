@@ -1,6 +1,6 @@
 package com.pennycontrol.userservice.repository;
 
-import com.pennycontrol.userservice.entity.User;
+import com.pennycontrol.common.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,4 +18,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Find user by email
      */
     Optional<User> findByEmail(String email);
+
+    /**
+     * Find user by phone number
+     */
+    Optional<User> findByPhoneNumber(String phoneNumber);
 }

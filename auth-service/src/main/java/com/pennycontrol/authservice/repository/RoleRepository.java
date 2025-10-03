@@ -1,6 +1,6 @@
 package com.pennycontrol.authservice.repository;
 
-import com.pennycontrol.authservice.entity.Role;
+import com.pennycontrol.common.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

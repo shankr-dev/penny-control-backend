@@ -1,7 +1,7 @@
 package com.pennycontrol.authservice.service;
 
 import com.pennycontrol.authservice.entity.RefreshToken;
-import com.pennycontrol.authservice.entity.User;
+import com.pennycontrol.common.entity.User;
 
 public interface RefreshTokenService {
 

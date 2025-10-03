@@ -20,6 +20,7 @@ public class UserResponse {
     private String email;
     private String name;
     private String phoneNumber;
+    private String avatar;
     private String currency;
     private Set<String> roles;
     private Boolean emailVerified;
